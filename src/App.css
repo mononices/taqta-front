@@ -1,8 +1,6 @@
 #root {
   width: 100%;
   height: 100%;
-  margin: 0 auto;
-  padding: 2rem;
   text-align: center;
 }
 
@@ -58,23 +56,12 @@
   align-items: center;
 }
 
-.cell::after{
-  content: '';
-  position: absolute;
-  display: inline-block;
-  width: 100%;
-  min-height: 100px;
-  z-index: 10;
-}
-
 .column{
   width: 100%;
   height: 100%;
-  position: relative;
 }
 
 .timetable{
-  position: relative;
   display: grid;
   width: 100%;
   height: 100%;
