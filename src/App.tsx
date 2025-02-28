@@ -14,8 +14,19 @@ const theme = createTheme({
         body: darkScrollbar(),
       }),
     },
+    MuiButton: {
+        styleOverrides: {
+          containedPrimary: {
+            color: '#ffffff' 
+          },
+          containedSecondary: {
+            color: '#ffffff'
+          },
+        },
+    },
   },
   palette: {
+    mode: "dark",
     background: {
       default: '#101010'
     },
@@ -24,8 +35,10 @@ const theme = createTheme({
     },
     divider: 'rgba(105, 105, 105, 0.5)',
     text: {
-      primary: '#ffffff'
-    }
+      primary: '#ffffff',
+      secondary: '#ffffff'
+    },
+    success: { main: "#2e7d32" }, 
   },
   shape: {
     borderRadius: 8

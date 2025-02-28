@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionProps, AccordionSummary, Box, Button, Checkbox, Divider, FormControlLabel, List, styled, Switch, Typography, useTheme } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionProps, AccordionSummary, Box, Button, Checkbox, Divider, FormControlLabel, IconButton, List, ListItem, ListItemText, styled, Switch, TextField, Typography, useTheme } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
@@ -7,6 +7,8 @@ import React, { useCallback, useRef, useState } from "react";
 import { CustomCheckbox } from "./CustomCheckbox";
 import { API_URL } from "../config";
 import axios from "axios";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { CustomTextField } from "./CustomTextField";
 
 const CustomAccordion = styled((props: AccordionProps) => (
     <Accordion disableGutters {...props}/>))(({theme}) => ({
@@ -22,15 +24,30 @@ export const ScheduleGenerator = () => {
     const { schedule } = useScheduleStore();
     const { courseLists, setItem } = useCourseStore();
     const [ minimizeWindows, setMinimizeWindows ] = useState(true);
+    const [ names, setNames ] = useState<string[]>([]);
+    const [ input, setInput ] = useState<string>("");
+
     const handleMinimizeWindows = (event: React.ChangeEvent<HTMLInputElement>) => {
       setMinimizeWindows(event.target.checked);
     }
+
+    const addName = () => {
+      if (input.trim() !== "") {
+        setNames([...names, input.trim()]);
+        setInput("");
+      }
+    };
+    
+    const deleteName = (index: number) => {
+      setNames(names.filter((_, i) => i !== index));
+    };
 
     const generate = useCallback(() => {
       axios.post(API_URL + "schedule/generate", {
         id: schedule,
         options: {
-          minimizeWindows: minimizeWindows
+          minimizeWindows: minimizeWindows,
+          professorBlacklist: names
         }
       }, {
           'headers': {
@@ -46,6 +63,7 @@ export const ScheduleGenerator = () => {
               Authorization: `Bearer ${localStorage.getItem("token")}`
           }}).then((update) => {
               const { status, result } = update.data;
+              if(status === "failed") clearInterval(pollingRef.current);
               if(status !== "completed") return;
               const preparedCourses: any[] = [];
         
@@ -70,7 +88,7 @@ export const ScheduleGenerator = () => {
       .catch((err) => {
         console.log(err);
       });
-    }, []);
+    }, [names, minimizeWindows]);
 
     return (
     <Accordion disableGutters sx={{ flexGrow: '0 !important', borderRadius: '0 !important', backgroundColor: "background.default", marginTop: 0 }}>
@@ -112,15 +130,48 @@ export const ScheduleGenerator = () => {
               <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fill: 'white'}}/>}>
                 <Typography variant="subtitle2">Avoid professors</Typography>
               </AccordionSummary>
+              <AccordionDetails>
+              <Box display="flex" flexDirection="row">
+              <CustomTextField
+                label="Enter name"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                sx={{ mb: "10px", maxHeight: "45px", boxSizing: 'border-box', '& .MuiInputLabel-root': {
+                  transform: 'translate(14px, 13px) scale(1)',
+                  fontSize: '14px'
+                },
+                '& .MuiInputLabel-shrink': {
+                  transform: 'translate(14px, -9px) scale(0.8)'
+                }
+               }}
+              />
+              <Button sx={{height: "45px", textTransform: 'none'}} disableElevation variant="contained" color="primary" onClick={addName} style={{ marginLeft: 10 }}>
+                Add
+              </Button>
+              </Box>
+              <List>
+                {names.map((name, index) => (
+                  <ListItem key={index} secondaryAction={
+                    <IconButton edge="end" color="secondary" onClick={() => deleteName(index)}>
+                      <DeleteIcon sx={{fill: 'white'}}/>
+                    </IconButton>
+                  }>
+                    <ListItemText primary={name} />
+                  </ListItem>
+                ))}
+              </List>
+              </AccordionDetails>
             </CustomAccordion>
-             <CustomAccordion>
+            {
+            /* <CustomAccordion>
               <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fill: 'white'}}/>}>
                 <Typography variant="subtitle2">Declutter specific days</Typography>
               </AccordionSummary>
-            </CustomAccordion>
+            </CustomAccordion>*/
+            }
           </List>
         </AccordionDetails> 
-        <Button onClick={generate} disableElevation variant="contained" sx={{width: '100%', fontSize: '14px', backgroundColor: theme.palette.background.default, height: 36.5, textTransform: 'none', borderRadius: '0'}} startIcon={<AutoAwesomeOutlinedIcon sx={{fontSize: 2}} />}>Generate</Button>
+        <Button onClick={generate} disableElevation variant="contained" sx={{width: '100%', fontSize: '14px', backgroundColor: 'transparent', borderTop: '1px solid', borderColor: theme.palette.divider, height: 40, textTransform: 'none', borderRadius: '0'}} startIcon={<AutoAwesomeOutlinedIcon sx={{fontSize: 2}} />}>Generate</Button>
     </Accordion>
     )
 };

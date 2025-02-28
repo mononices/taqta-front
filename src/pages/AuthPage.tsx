@@ -50,7 +50,7 @@ export default function AuthPage() {
     const navigate = useNavigate();
 
     return (
-    <Box sx={{height: '100%'}}>
+    <Box sx={{height: '100%', display: 'flex', flexGrow: 0}}>
     <AppBar position="fixed" color="secondary">
         <Container maxWidth="xl">
             <Toolbar disableGutters>
@@ -86,7 +86,7 @@ export default function AuthPage() {
             </Toolbar>
         </Container>
     </AppBar>
-    <Box sx={{width: '80%', alignItems: 'center', margin: "auto", padding: "5%", borderRadius: "10px", justifyContent: "center", flexDirection: "column", display: "flex", backgroundImage: "url('./gradient.jpg')"}}>
+    <Box sx={{width: '80%', flexGrow: 0, alignItems: 'center', margin: "auto", padding: "5%", borderRadius: "10px", justifyContent: "center", flexDirection: "column", display: "flex", backgroundImage: "url('./gradient.jpg')"}}>
             <Typography variant="h1" sx={{mb: '20px', textAlign: "center"}}>
                 Generate complex schedules automagically
             </Typography>

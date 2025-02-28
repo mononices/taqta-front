@@ -51,6 +51,9 @@ export const useCourseStore = create<CourseStore>((set) => ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`
         }
+      }).then(res => {
+        const save = res.data;
+        courseListsCopy[index]._id = save[index]._id;
       });
     } catch(err){}
 
@@ -143,7 +146,7 @@ const CourseList = ({scheduleIndex} : CourseListProps) => {
               <Typography sx={{mb: '10px'}}>
               {course.title}
               </Typography>
-              <Box sx={{overflowX: 'auto', display: 'flex', gap: 2}}>
+              <Box sx={{overflowX: 'auto', display: 'flex', gap: 2,  '.MuiInputBase-root': { border: '0px !important'}}}>
               {course.types?.map((sessionType: any) => {
                 return <CustomSelect value={sessionType.selected ?? 'N/A'} 
                 renderValue={(selected) => selected}
@@ -153,7 +156,8 @@ const CourseList = ({scheduleIndex} : CourseListProps) => {
                   setItem(scheduleIndex, {_id: courseLists[scheduleIndex]?._id, courses: courses});  
                 }} IconComponent={() => null} sx={{maxHeight: '20px', fontSize: 12, width: 'fit-content', flexGrow: 0}}inputProps={{
                 sx: {
-                  pr: '14px !important'
+                  pr: '14px !important',
+                 
                 },
                 MenuProps: {
                 PaperProps: {

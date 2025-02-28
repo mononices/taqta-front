@@ -16,24 +16,9 @@ import { useCourseStore } from './Menu';
 import { CustomSelect } from './CustomSelect';
 import { bull } from './Bull';
 import { MyDrawer } from "./CustomDrawer"
+import { CustomTextField } from './CustomTextField';
 
 const drawerWidth = 300;
-
-const CustomTextField = styled((props: TextFieldProps) => (
-      <TextField {...props}/>))(({theme}) => ({
-        maxHeight: 45,
-        width: '100%',
-        '& .MuiInputBase-root': {
-          height: 45,
-          border: '2px solid',
-          borderColor: theme.palette.divider,
-        },
-        '& .MuiFilledInput-root': {
-          textAlign: 'center',
-          width: '100%',
-          color: theme.palette.text.primary,
-        }
-}));
 
 export interface CourseSearchProps {
   scheduleIndex: number;
