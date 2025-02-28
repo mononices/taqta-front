@@ -16,6 +16,19 @@ body {
   min-height: 100vh;
 }
 
+.MuiAccordionSummary-expandIconWrapper{
+  flex-grow: 0 !important;
+}
+
 div{
   flex-grow: 1;
 }
+/*
+*{
+    -ms-overflow-style: none;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+*/

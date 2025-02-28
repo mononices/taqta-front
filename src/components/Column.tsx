@@ -1,8 +1,9 @@
 interface ColumnProps {
-    day: string
+    day: string,
+    children?: React.ReactNode
 }
 
-function Column({day}: ColumnProps){
+function Column({day, children}: ColumnProps){
     var rows = [];
     for(let hour = 8; hour < 24; hour++){
         rows.push(<div className="cell" key={`row-${hour}`}></div>)
@@ -11,6 +12,7 @@ function Column({day}: ColumnProps){
     return (
         <div className="column" key={`column-${day}`}>
             <div className="header">{day}</div>
+            {children}
             {rows}
         </div>)
     

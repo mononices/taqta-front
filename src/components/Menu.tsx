@@ -6,23 +6,16 @@ import Row from "./Row";
 import CourseSearch from "./CourseSearch";
 import { create } from "zustand";
 import { __unsafe_useEmotionCache } from "@emotion/react";
+import { CustomSelect } from "./CustomSelect";
+import { bull } from "./Bull";
+import { ScheduleGenerator } from "./Generator";
+import { API_URL } from "../config";
+import axios from "axios";
+import { PictureAsPdfRounded } from "@mui/icons-material";
+import { MyDrawer } from "./CustomDrawer"
 
 const drawerWidth = 300;
 const MemoCourseSearch = React.memo(CourseSearch);
-
-const Weirdo = (props: DrawerProps) => {
-  return <MuiDrawer {...props}></MuiDrawer>
-}
-
-const MyDrawer = styled(Weirdo)(({theme}) => ({
-  width: drawerWidth,
-  flexShrink: 0,
-  boxSizing: 'border-box',
-  [`& .${drawerClasses.paper}`]: {
-      width: drawerWidth,
-      backgroundColor: `${theme.palette.divider}`
-  },
-}));
 
 interface CourseListProps {
   scheduleIndex: number
@@ -47,19 +40,79 @@ export const useCourseStore = create<CourseStore>((set) => ({
     }
 
     courseListsCopy[index] = courseList;
+
+    const updatedScheduleList = prepare(courseListsCopy);
+    try{
+      const response = axios.post(API_URL + "schedule/save", {
+        schedules: updatedScheduleList 
+      },
+      {
+        'headers': {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+    } catch(err){}
+
     return { courseLists: courseListsCopy };
   }),
   setItems: (courseLists: any[]) => set({ courseLists: courseLists }),
   clearItems: () => set({ courseLists: [] })
 }));
 
+type ScheduleStore = {
+  schedule: number;
+  setSchedule:(index: number) => void;
+};
+
+export const useScheduleStore = create<ScheduleStore>((set) => ({
+  schedule: 0,
+  setSchedule: (index: number) => set({ schedule: index })
+}));
+
+type Schedule = {
+  _id?: string, 
+  courses: Array<{body: string, picked: {}}>
+};
+
+const prepare = (scheduleList: any) => {
+  const preparedList: Array<Schedule> = [];
+
+  for(const schedule of scheduleList){
+    const preparedSchedule: Schedule = {
+      _id: schedule._id, courses: []
+    };
+
+    if(!schedule.courses) continue;
+
+    for(const course of schedule.courses){
+      if(!course.types) continue;
+
+      const preparedCourse: {body: string, picked: Record<string, any>} = {body: course._id, picked: {}};
+
+      for(const type of course.types){
+        if(!type.selected) continue;
+        const match = type.sessions.find((session: { type: string; section: any; }) => session.section + session.type === type.selected);
+        if(!match) continue;
+
+        preparedCourse.picked[type.abbreviation] = match._id;
+      }
+      preparedSchedule.courses.push(preparedCourse);
+    }
+    preparedList.push(preparedSchedule);
+  }
+
+  return preparedList;
+}
+
 const CourseList = ({scheduleIndex} : CourseListProps) => {
   const theme = useTheme();
   const [selectedCardKey, setSelectedCardKey] = useState("");
 
-  const { courseLists } = useCourseStore();
+  const { courseLists, setItem } = useCourseStore();
+
   const courses = useMemo(() => {
-    return courseLists[scheduleIndex] ?? [];
+    return courseLists[scheduleIndex]?.courses ?? [];
   }, [scheduleIndex, courseLists]);
 
   return (<List>{
@@ -68,15 +121,16 @@ const CourseList = ({scheduleIndex} : CourseListProps) => {
         sx={{
           backgroundColor: theme.palette.secondary.main,
           border: '1px solid', 
-          borderColor: theme.palette.divider
+          borderColor: theme.palette.divider,
+          mb: '10px'
         }}>
-          <CardActionArea onClick={() => {
+          <CardActionArea disableRipple onClick={() => {
             if(selectedCardKey === course._id) setSelectedCardKey(""); 
             else setSelectedCardKey(course._id)
           }}  
             data-active={selectedCardKey === course._id ? '' : undefined} sx={{
               '&[data-active]': {
-                backgroundColor: theme.palette.success.main,
+                backgroundColor: 'action.selectedHover', 
                 '&:hover': {
                   backgroundColor: 'action.selectedHover',
                 },
@@ -86,14 +140,32 @@ const CourseList = ({scheduleIndex} : CourseListProps) => {
               <Typography variant="body2" sx={{fontWeight: 'bold'}}>
               {course.abbreviation}
               </Typography>    
-              <Typography>
+              <Typography sx={{mb: '10px'}}>
               {course.title}
               </Typography>
               <Box sx={{overflowX: 'auto', display: 'flex', gap: 2}}>
               {course.types?.map((sessionType: any) => {
-                <Select value={sessionType.selected}>
-                  {Array.from(sessionType.sessions).map((_, index) => <></>)}
-                </Select>
+                return <CustomSelect value={sessionType.selected ?? 'N/A'} 
+                renderValue={(selected) => selected}
+                onChange={(event) => {
+                  sessionType.selected = event.target.value;
+                  console.log(sessionType.selected);
+                  setItem(scheduleIndex, {_id: courseLists[scheduleIndex]?._id, courses: courses});  
+                }} IconComponent={() => null} sx={{maxHeight: '20px', fontSize: 12, width: 'fit-content', flexGrow: 0}}inputProps={{
+                sx: {
+                  pr: '14px !important'
+                },
+                MenuProps: {
+                PaperProps: {
+                    sx: {
+                    backgroundColor: theme.palette.background.default
+                    }
+                }
+                }
+            }}> 
+                  <MenuItem key="N/A" value="N/A">N/A</MenuItem>
+                  {Array.from(sessionType.sessions).map((session: any, index) => <MenuItem key={session._id} value={session.section + session.type}>{session.section}{session.type}{bull}{session.start_time}-{session.end_time}</MenuItem>)}
+                </CustomSelect>
               })}
               </Box>
             </CardContent>
@@ -105,14 +177,10 @@ const CourseList = ({scheduleIndex} : CourseListProps) => {
 export default function Menu() {
     const theme = useTheme();
 
-    const [schedule, setSchedule] = useState(0);
+    const { setItems } = useCourseStore();
+    const { schedule , setSchedule } = useScheduleStore();
     const [lastScheduleIndex, setLastScheduleIndex] = useState(0);
-    const [open, setOpen] = React.useState(false);
-
-    const toggleDrawer = (newOpen: boolean) => () => {
-      setOpen(newOpen);
-    };
-
+    
     const handleChange = (event: SelectChangeEvent) => {
       if(event.target.value === undefined) return;
 
@@ -120,12 +188,49 @@ export default function Menu() {
     };
 
     const query = useMediaQuery('(min-width:800px)');
-    const [pickedCourses, setPickedCourses] = useState<any[]>([]);
+
+    useEffect(() => {
+      try{
+        axios.get(API_URL + "user/me/schedules", {
+            'headers': {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+        }).then(response => {
+            const schedules = response.data.schedules.map((schedule: any) => {
+              const preparedCourses: any[] = [];
+              for(const course of schedule.courses){
+                const preparedCourse = course.body;
+                for(const [key, pickedSession] of Object.entries(course.picked)){
+                    for(const type of preparedCourse.types){
+                      if(type.abbreviation === key){
+                        const picked = type.sessions.find((session: any) => session._id === pickedSession);
+                        type.selected = picked.section + picked.type; 
+                      }
+                    }
+                }
+                preparedCourses.push(preparedCourse);
+              }
+
+              return {
+                _id: schedule._id,
+                courses: preparedCourses
+              }
+            });         
+            
+          //console.log(schedules);
+          if(schedules.length) setLastScheduleIndex(schedules.length - 1);
+          setItems(schedules);
+        });
+      }
+      catch(err){
+        //console.log(err);
+      }
+    }, [])
 
     const MenuDrawer = () => {
         return (
         <MyDrawer variant="permanent">
-            <Box sx={{p: '10px', backgroundColor: `${theme.palette.background.default}` }}>
+            <Box sx={{p: '10px', flexDirection: 'column',backgroundColor: `${theme.palette.background.default}` }}>
                 <Row>
                 <Select fullWidth value={`${schedule}`} onChange={handleChange}
                 IconComponent={React.forwardRef<SVGSVGElement, SvgIconProps>((props, ref) => (<UnfoldMoreSharpIcon fontSize="small" sx={{fill: 'white'}} {...props} ref={ref}/>))}
@@ -163,6 +268,7 @@ export default function Menu() {
                 </Row>
                 <CourseList scheduleIndex={schedule}/>
             </Box>
+            <ScheduleGenerator />
             <CourseSearch scheduleIndex={schedule}/>
         </MyDrawer>);
     };

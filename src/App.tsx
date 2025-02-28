@@ -1,12 +1,20 @@
-import { Box, createTheme, ThemeProvider } from '@mui/material'
+import { Box, createTheme, CssBaseline, darkScrollbar, ScopedCssBaseline, ThemeProvider } from '@mui/material'
 import './App.css'
 import Menu from './components/Menu'
 import TimeTable from './components/TimeTable'
 import { BrowserRouter, Route } from 'react-router';
 import { Routes } from 'react-router';
-import AuthPage from './Auth';
+import AuthPage from './pages/AuthPage';
+import { AdminPage } from './pages/AdminPage';
 
 const theme = createTheme({
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: (themeParam) => ({
+        body: darkScrollbar(),
+      }),
+    },
+  },
   palette: {
     background: {
       default: '#101010'
@@ -40,9 +48,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<AuthPage />}></Route>
           <Route path="scheduler" element={Scheduler}></Route>
+          <Route path="admin" element={<AdminPage />}></Route>
         </Routes>
       </BrowserRouter>
-      
     </ThemeProvider>
   )
 };
